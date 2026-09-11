@@ -1,2 +1,90 @@
-# backend-developer-as-final-65116-sangita
-Final Project Assignment - This repository contains the complete final project code and documentation.
+# Resource Booking API
+
+Backend assignment for a resource booking system (rooms, vehicles, equipment).
+
+Stack: Spring Boot 3.5, Java 17, Spring Security + JWT, JPA, MySQL.
+
+## Run locally
+
+You need JDK 17+ and MySQL.
+
+1. Create a database called `resource_booking` (or leave it, the JDBC URL can create it).
+2. If your MySQL user/password is not `root` / `root`, change it in `application.yml` or set env vars.
+3. Start the app:
+
+```
+mvnw.cmd spring-boot:run
+```
+
+No MySQL? Use H2 instead:
+
+```
+mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=h2"
+```
+
+Docker (optional):
+
+```
+docker compose up -d mysql
+```
+
+## Env vars
+
+| Name | Default |
+| --- | --- |
+| SERVER_PORT | 8080 |
+| DB_URL | jdbc:mysql://localhost:3306/resource_booking?... |
+| DB_USERNAME | root |
+| DB_PASSWORD | root |
+| JWT_SECRET | (dev key, change this, min 32 chars) |
+| JWT_EXPIRATION_MS | 86400000 |
+
+See `.env.example`.
+
+## Test users (created on first start)
+
+- admin / Admin@123  (ADMIN)
+- user / User@123    (USER)
+- user2 / User@123   (USER)
+
+## Docs
+
+- Swagger: http://localhost:8080/swagger-ui.html
+- Postman collection: `docs/Resource-Booking.postman_collection.json`
+
+Login with `POST /auth/login`, then send `Authorization: Bearer <token>`.
+
+## Roles
+
+USER:
+- can view resources
+- can create reservations (owner is taken from the JWT, not the body)
+- can view / cancel only their own reservations
+
+ADMIN:
+- full CRUD on resources and reservations
+- can see everyone's reservations
+
+## Main APIs
+
+Resources: `/api/resources`  (GET for both, POST/PUT/DELETE admin only)
+
+Reservations: `/api/reservations`
+
+Filters on list:
+
+```
+GET /api/reservations?status=PENDING&minPrice=50&maxPrice=200&page=0&size=10&sort=price,asc
+```
+
+Statuses: PENDING, CONFIRMED, CANCELLED
+
+If you don't send `price` on create, it is calculated from hourly rate * hours.
+
+## Tests
+
+```
+mvnw.cmd test
+```
+
+Uses H2, no MySQL needed.
