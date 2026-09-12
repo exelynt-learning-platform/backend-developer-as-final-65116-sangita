@@ -65,10 +65,42 @@ class JwtServiceTest {
 
     @Test
     void rejectsShortBase64Secret() {
-        String shortBase64 = java.util.Base64.getEncoder().encodeToString("too-short".getBytes());
+        String shortBase64 = "base64:" + java.util.Base64.getEncoder().encodeToString("too-short".getBytes());
         assertThatThrownBy(() -> new JwtService(new JwtProperties(shortBase64, 1000)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Base64-decoded");
+    }
+
+    @Test
+    void acceptsExplicitRawPrefix() {
+        JwtService service = new JwtService(new JwtProperties(
+                "raw:TestOnlySecretKeyThatIsAtLeastThirtyTwoBytesLong!!",
+                3_600_000
+        ));
+        User user = User.builder().id(1L).username("admin").email("a@b.c").password("x").role(Role.ADMIN).enabled(true).build();
+        assertThat(service.extractUsername(service.generateToken(user))).isEqualTo("admin");
+    }
+
+    @Test
+    void acceptsExplicitBase64Prefix() {
+        byte[] key = new byte[32];
+        java.util.Arrays.fill(key, (byte) 7);
+        JwtService service = new JwtService(new JwtProperties(
+                "base64:" + java.util.Base64.getEncoder().encodeToString(key),
+                3_600_000
+        ));
+        User user = User.builder().id(1L).username("admin").email("a@b.c").password("x").role(Role.ADMIN).enabled(true).build();
+        assertThat(service.isTokenValid(service.generateToken(user), user)).isTrue();
+    }
+
+    @Test
+    void doesNotTreatRawAlphabetAsBase64() {
+        // without a prefix the secret is used as UTF-8, even if it looks like Base64
+        String looksLikeBase64 = java.util.Base64.getEncoder()
+                .encodeToString("TestOnlySecretKeyThatIsAtLeast32Bytes!!".getBytes());
+        JwtService service = new JwtService(new JwtProperties(looksLikeBase64, 3_600_000));
+        User user = User.builder().id(1L).username("admin").email("a@b.c").password("x").role(Role.ADMIN).enabled(true).build();
+        assertThat(service.extractUsername(service.generateToken(user))).isEqualTo("admin");
     }
 
     @Test

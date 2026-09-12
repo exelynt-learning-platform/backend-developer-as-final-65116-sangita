@@ -16,7 +16,7 @@ You need JDK 17+ and MySQL.
 mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-`JWT_SECRET` is required outside `dev` / `h2` / test. There is no default key. For default or `prod`, set a secret of at least 32 characters first:
+`JWT_SECRET` is required outside `dev` / `h2` / test. There is no default key. Treat the value as a raw UTF-8 string unless you prefix it with `base64:` (or `raw:`). For default or `prod`, set a secret of at least 32 characters first:
 
 ```
 set JWT_SECRET=put-your-own-long-random-secret-here-32+
@@ -45,7 +45,7 @@ Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users
 | DB_URL | jdbc:mysql://localhost:3306/resource_booking?... |
 | DB_USERNAME | root |
 | DB_PASSWORD | root |
-| JWT_SECRET | **required** (no default; min 32 chars) |
+| JWT_SECRET | **required** (no default; min 32 chars; optional `base64:` / `raw:` prefix) |
 | JWT_EXPIRATION_MS | 86400000 |
 | APP_SEED_ENABLED | false (true in `dev` / `h2` only) |
 | SEED_ADMIN_PASSWORD / SEED_USER_PASSWORD | local demo defaults in `dev` / `h2` |

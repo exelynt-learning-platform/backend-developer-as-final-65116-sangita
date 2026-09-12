@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
+    static final String BASE64_PREFIX = "base64:";
+    static final String RAW_PREFIX = "raw:";
+
     private final JwtProperties jwtProperties;
     private final SecretKey signingKey;
 
@@ -65,27 +68,48 @@ public class JwtService {
         if (secret == null || secret.isBlank()) {
             throw new JwtConfigurationException("JWT_SECRET is required. Set it before starting the app.");
         }
-        if (secret.toLowerCase().contains("replace-with") || secret.toLowerCase().contains("changeme")) {
+
+        String trimmed = secret.trim();
+        boolean base64 = false;
+        String value = trimmed;
+        if (startsWithIgnoreCase(trimmed, BASE64_PREFIX)) {
+            base64 = true;
+            value = trimmed.substring(BASE64_PREFIX.length());
+        } else if (startsWithIgnoreCase(trimmed, RAW_PREFIX)) {
+            value = trimmed.substring(RAW_PREFIX.length());
+        }
+
+        if (value.isBlank()) {
+            throw new JwtConfigurationException("JWT_SECRET is empty after the encoding prefix.");
+        }
+        if (value.toLowerCase().contains("replace-with") || value.toLowerCase().contains("changeme")) {
             throw new JwtConfigurationException("JWT_SECRET looks like a placeholder. Set a real secret.");
         }
 
         byte[] keyBytes;
-        boolean decodedAsBase64 = false;
-        try {
-            keyBytes = Decoders.BASE64.decode(secret);
-            decodedAsBase64 = true;
-        } catch (RuntimeException ex) {
-            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        if (base64) {
+            try {
+                keyBytes = Decoders.BASE64.decode(value);
+            } catch (RuntimeException ex) {
+                throw new JwtConfigurationException("JWT_SECRET has prefix base64: but is not valid Base64.");
+            }
+        } else {
+            keyBytes = value.getBytes(StandardCharsets.UTF_8);
         }
+
         if (keyBytes.length < 32) {
-            if (decodedAsBase64) {
+            if (base64) {
                 throw new JwtConfigurationException(
                         "JWT_SECRET Base64-decoded to " + keyBytes.length
-                                + " bytes; HS256 needs at least 32. Use a longer key or a raw string of 32+ characters."
+                                + " bytes; HS256 needs at least 32."
                 );
             }
             throw new JwtConfigurationException("JWT_SECRET must be at least 32 bytes for HS256");
         }
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private static boolean startsWithIgnoreCase(String value, String prefix) {
+        return value.regionMatches(true, 0, prefix, 0, prefix.length());
     }
 }

@@ -118,6 +118,7 @@ class ReservationServiceTest {
                 .price(new BigDecimal("50.00"))
                 .build();
         when(reservationRepository.findById(8L)).thenReturn(java.util.Optional.of(reservation));
+        when(authHelper.getLoggedInUser()).thenReturn(user);
 
         ReservationUpdateRequest request =
                 new ReservationUpdateRequest(5L, start, end, new BigDecimal("50.00"), ReservationStatus.CONFIRMED);

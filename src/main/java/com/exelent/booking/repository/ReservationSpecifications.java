@@ -2,6 +2,7 @@ package com.exelent.booking.repository;
 
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -20,6 +21,11 @@ public final class ReservationSpecifications {
             BigDecimal maxPrice
     ) {
         return (root, query, cb) -> {
+            if (query != null && query.getResultType() != null && query.getResultType() != Long.class) {
+                root.fetch("user", JoinType.INNER);
+                root.fetch("resource", JoinType.INNER);
+                query.distinct(true);
+            }
             List<Predicate> predicates = new ArrayList<>();
             if (userId != null) {
                 predicates.add(cb.equal(root.get("user").get("id"), userId));

@@ -26,10 +26,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Reservation APIs. Class-level rule requires ADMIN or USER (same as SecurityConfig /api/**).
+ * USER list/get/cancel are further limited to the JWT owner in ReservationService.
+ */
 @RestController
 @RequestMapping("/api/reservations")
 @RequiredArgsConstructor
 @Tag(name = "Reservations")
+@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 public class ReservationController {
 
     private final ReservationService reservationService;

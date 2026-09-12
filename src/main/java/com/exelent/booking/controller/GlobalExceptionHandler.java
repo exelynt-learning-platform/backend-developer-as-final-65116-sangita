@@ -82,7 +82,8 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, "Not found", request, null);
     }
 
-    // @PreAuthorize failures reach MVC as AccessDeniedException (401 still goes through RestAuthenticationEntryPoint)
+    // @PreAuthorize failures reach MVC as AccessDeniedException (401 still goes through RestAuthenticationEntryPoint).
+    // Missing principal in AuthHelper throws ApiException UNAUTHORIZED, not IllegalStateException.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleDenied(AccessDeniedException ex, HttpServletRequest request) {
         return error(HttpStatus.FORBIDDEN, "Access denied", request, null);

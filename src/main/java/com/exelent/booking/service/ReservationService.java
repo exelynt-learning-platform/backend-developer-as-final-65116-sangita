@@ -77,6 +77,7 @@ public class ReservationService {
     @Transactional
     public ReservationResponse update(Long id, ReservationUpdateRequest request) {
         Reservation reservation = getById(id);
+        accessPolicy.requireOwnerOrAdmin(reservation);
         if (reservation.getStatus() == ReservationStatus.CANCELLED) {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.CANCELLED_CANNOT_UPDATE);
         }
