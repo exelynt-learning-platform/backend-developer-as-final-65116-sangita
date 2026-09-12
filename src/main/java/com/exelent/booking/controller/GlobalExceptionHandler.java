@@ -3,19 +3,21 @@ package com.exelent.booking.controller;
 import com.exelent.booking.dto.ApiErrorResponse;
 import com.exelent.booking.dto.ApiErrorResponse.FieldErrorDetail;
 import com.exelent.booking.exception.ApiException;
+import com.exelent.booking.exception.ApiMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -30,14 +32,14 @@ public class GlobalExceptionHandler {
         return error(ex.getStatus(), ex.getMessage(), request, null);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidation(BindException ex, HttpServletRequest request) {
         List<FieldErrorDetail> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(err -> errors.add(new FieldErrorDetail(err.getField(), err.getDefaultMessage())));
         ex.getBindingResult().getGlobalErrors()
                 .forEach(err -> errors.add(new FieldErrorDetail(err.getObjectName(), err.getDefaultMessage())));
-        return error(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
+        return error(HttpStatus.BAD_REQUEST, ApiMessages.VALIDATION_FAILED, request, errors);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -45,13 +47,13 @@ public class GlobalExceptionHandler {
         List<FieldErrorDetail> errors = new ArrayList<>();
         ex.getConstraintViolations().forEach(v ->
                 errors.add(new FieldErrorDetail(v.getPropertyPath().toString(), v.getMessage())));
-        return error(HttpStatus.BAD_REQUEST, "Validation failed", request, errors);
+        return error(HttpStatus.BAD_REQUEST, ApiMessages.VALIDATION_FAILED, request, errors);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleBadJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
         log.debug("Invalid request body on {}: {}", request.getRequestURI(), ex.getMostSpecificCause().getMessage());
-        return error(HttpStatus.BAD_REQUEST, "Invalid request body", request, null);
+        return error(HttpStatus.BAD_REQUEST, ApiMessages.INVALID_REQUEST_BODY, request, null);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -75,25 +77,30 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ApiErrorResponse> handleMediaType(HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
-        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type", request, null);
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ApiMessages.UNSUPPORTED_MEDIA_TYPE, request, null);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleMissingResource(NoResourceFoundException ex, HttpServletRequest request) {
-        return error(HttpStatus.NOT_FOUND, "Not found", request, null);
+        return error(HttpStatus.NOT_FOUND, ApiMessages.NOT_FOUND, request, null);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnknownSort(PropertyReferenceException ex, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, ApiMessages.cannotSortBy(ex.getPropertyName()), request, null);
     }
 
     // @PreAuthorize failures reach MVC as AccessDeniedException (401 still goes through RestAuthenticationEntryPoint).
     // Missing principal in AuthHelper throws ApiException UNAUTHORIZED, not IllegalStateException.
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleDenied(AccessDeniedException ex, HttpServletRequest request) {
-        return error(HttpStatus.FORBIDDEN, "Access denied", request, null);
+        return error(HttpStatus.FORBIDDEN, ApiMessages.ACCESS_DENIED, request, null);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleOther(Exception ex, HttpServletRequest request) {
         log.error("Unhandled error on {}", request.getRequestURI(), ex);
-        return error(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong", request, null);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, ApiMessages.INTERNAL_ERROR, request, null);
     }
 
     private ResponseEntity<ApiErrorResponse> error(

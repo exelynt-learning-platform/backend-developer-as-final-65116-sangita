@@ -1,7 +1,8 @@
 package com.exelent.booking.dto.reservation;
 
 import com.exelent.booking.domain.ReservationStatus;
-import jakarta.validation.constraints.AssertTrue;
+import com.exelent.booking.validation.TimeRange;
+import com.exelent.booking.validation.ValidTimeRange;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Future;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@ValidTimeRange
 public record ReservationCreateRequest(
         @NotNull(message = "resourceId is required")
         Long resourceId,
@@ -26,9 +28,5 @@ public record ReservationCreateRequest(
         BigDecimal price,
 
         ReservationStatus status
-) {
-    @AssertTrue(message = "endTime must be after startTime")
-    public boolean isTimeRangeValid() {
-        return startTime == null || endTime == null || endTime.isAfter(startTime);
-    }
+) implements TimeRange {
 }

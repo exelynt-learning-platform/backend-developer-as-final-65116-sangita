@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,13 +35,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/reservations")
 @RequiredArgsConstructor
 @Tag(name = "Reservations")
+@Validated
 public class ReservationController {
 
     private final ReservationService reservationService;
 
     @GetMapping
     public PagedResponse<ReservationResponse> getAll(
-            @ModelAttribute ReservationFilterRequest filter,
+            @Valid @ModelAttribute ReservationFilterRequest filter,
             @PageableDefault(size = 10, sort = ReservationSort.DEFAULT, direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return reservationService.search(filter, pageable);

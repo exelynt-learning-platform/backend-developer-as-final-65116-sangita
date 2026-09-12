@@ -1,5 +1,6 @@
 package com.exelent.booking.security;
 
+import com.exelent.booking.exception.ApiMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -18,6 +19,6 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex)
             throws IOException {
-        authEntryPoint.write(response, request, HttpStatus.FORBIDDEN, "Access denied");
+        authEntryPoint.write(response, request, HttpStatus.FORBIDDEN, ApiMessages.ACCESS_DENIED);
     }
 }

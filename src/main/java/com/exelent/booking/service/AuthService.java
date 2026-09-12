@@ -5,6 +5,7 @@ import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.auth.LoginRequest;
 import com.exelent.booking.dto.auth.LoginResponse;
 import com.exelent.booking.exception.ApiException;
+import com.exelent.booking.exception.ApiMessages;
 import com.exelent.booking.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,7 @@ public class AuthService {
                     user.getRole().name()
             );
         } catch (AuthenticationException e) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, ApiMessages.INVALID_CREDENTIALS);
         }
     }
 }

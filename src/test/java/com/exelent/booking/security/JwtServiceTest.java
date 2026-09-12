@@ -104,6 +104,13 @@ class JwtServiceTest {
     }
 
     @Test
+    void rejectsNonPositiveExpiration() {
+        assertThatThrownBy(() -> new JwtProperties("TestOnlySecretKeyThatIsAtLeastThirtyTwoBytesLong!!", 0))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("expiration-ms");
+    }
+
+    @Test
     void rejectsPlaceholderSecret() {
         assertThatThrownBy(() -> new JwtService(new JwtProperties(
                 "replace-with-a-long-random-secret-key-min-32-chars",

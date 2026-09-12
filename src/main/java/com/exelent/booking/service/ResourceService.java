@@ -5,6 +5,7 @@ import com.exelent.booking.dto.PagedResponse;
 import com.exelent.booking.dto.resource.ResourceRequest;
 import com.exelent.booking.dto.resource.ResourceResponse;
 import com.exelent.booking.exception.ApiException;
+import com.exelent.booking.exception.ApiMessages;
 import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
@@ -59,18 +60,18 @@ public class ResourceService {
     public void delete(Long id) {
         BookableResource resource = getResource(id);
         if (reservationRepository.existsByResource_Id(id)) {
-            throw new ApiException(HttpStatus.CONFLICT, "Can't delete this resource, it already has reservations");
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_HAS_RESERVATIONS);
         }
         resourceRepository.delete(resource);
     }
 
     public BookableResource getResource(Long id) {
         return resourceRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Resource not found"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, ApiMessages.RESOURCE_NOT_FOUND));
     }
 
     public BookableResource lockResource(Long id) {
         return resourceRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Resource not found"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, ApiMessages.RESOURCE_NOT_FOUND));
     }
 }

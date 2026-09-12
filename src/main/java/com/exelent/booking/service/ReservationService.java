@@ -32,7 +32,6 @@ public class ReservationService {
 
     @Transactional(readOnly = true)
     public PagedResponse<ReservationResponse> search(ReservationFilterRequest filter, Pageable pageable) {
-        filter.validate();
         ReservationSortValidator.validate(pageable.getSort());
 
         User loggedIn = accessPolicy.currentUser();
@@ -40,7 +39,7 @@ public class ReservationService {
 
         return PagedResponse.from(
                 reservationRepository
-                        .findAll(ReservationSpecifications.withFilters(
+                        .search(ReservationSpecifications.withFilters(
                                 userId, filter.status(), filter.minPrice(), filter.maxPrice()), pageable)
                         .map(ReservationResponse::from)
         );
@@ -55,10 +54,7 @@ public class ReservationService {
     public ReservationResponse create(ReservationCreateRequest request) {
         User owner = accessPolicy.currentUser();
         BookableResource resource = resourceService.lockResource(request.resourceId());
-
-        if (!resource.isAvailable()) {
-            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
-        }
+        assertResourceAvailable(resource);
         accessPolicy.assertCanCreateWithStatus(owner, request.status());
         checkOverlap(resource.getId(), request.startTime(), request.endTime(), null);
 
@@ -78,24 +74,14 @@ public class ReservationService {
     public ReservationResponse update(Long id, ReservationUpdateRequest request) {
         Reservation reservation = getById(id);
         accessPolicy.requireOwnerOrAdmin(reservation);
-        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
-            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.CANCELLED_CANNOT_UPDATE);
-        }
+        assertUpdatable(reservation);
 
         BookableResource resource = resourceService.lockResource(request.resourceId());
-        if (!resource.isAvailable()) {
-            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
-        }
+        assertResourceAvailable(resource);
         if (request.status() != ReservationStatus.CANCELLED) {
             checkOverlap(resource.getId(), request.startTime(), request.endTime(), reservation.getId());
         }
-
-        reservation.setResource(resource);
-        reservation.setStartTime(request.startTime());
-        reservation.setEndTime(request.endTime());
-        reservation.setPrice(pricingService.resolvePrice(resource, request.startTime(), request.endTime(), request.price()));
-        reservation.setStatus(request.status());
-        return ReservationResponse.from(reservationRepository.save(reservation));
+        return ReservationResponse.from(persistChanges(reservation, resource, request));
     }
 
     @Transactional
@@ -111,6 +97,27 @@ public class ReservationService {
     @Transactional
     public void delete(Long id) {
         reservationRepository.delete(getById(id));
+    }
+
+    private void assertUpdatable(Reservation reservation) {
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.CANCELLED_CANNOT_UPDATE);
+        }
+    }
+
+    private void assertResourceAvailable(BookableResource resource) {
+        if (!resource.isAvailable()) {
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
+        }
+    }
+
+    private Reservation persistChanges(Reservation reservation, BookableResource resource, ReservationUpdateRequest request) {
+        reservation.setResource(resource);
+        reservation.setStartTime(request.startTime());
+        reservation.setEndTime(request.endTime());
+        reservation.setPrice(pricingService.resolvePrice(resource, request.startTime(), request.endTime(), request.price()));
+        reservation.setStatus(request.status());
+        return reservationRepository.save(reservation);
     }
 
     private Reservation findOwnedOrAdmin(Long id) {

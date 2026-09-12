@@ -9,6 +9,7 @@ import com.exelent.booking.domain.User;
 import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.repository.ResourceRepository;
 import com.exelent.booking.repository.UserRepository;
+import com.exelent.booking.service.PricingService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -42,6 +43,7 @@ public class SeedData implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final SeedProperties seedProperties;
     private final Environment environment;
+    private final PricingService pricingService;
 
     @Override
     @Transactional
@@ -124,35 +126,38 @@ public class SeedData implements CommandLineRunner {
                 || reservationRepository.existsByUser_Id(user2.getId())) {
             return;
         }
-        LocalDateTime first = LocalDateTime.of(2026, 12, 1, 9, 0);
-        LocalDateTime second = LocalDateTime.of(2026, 12, 2, 9, 0);
-        LocalDateTime third = LocalDateTime.of(2026, 12, 3, 9, 0);
+        LocalDateTime firstStart = LocalDateTime.of(2026, 12, 1, 9, 0);
+        LocalDateTime firstEnd = firstStart.plusHours(2);
+        LocalDateTime secondStart = LocalDateTime.of(2026, 12, 2, 9, 0);
+        LocalDateTime secondEnd = secondStart.plusHours(3);
+        LocalDateTime thirdStart = LocalDateTime.of(2026, 12, 3, 9, 0);
+        LocalDateTime thirdEnd = thirdStart.plusHours(1);
 
         reservationRepository.save(Reservation.builder()
                 .user(user)
                 .resource(room)
-                .startTime(first)
-                .endTime(first.plusHours(2))
+                .startTime(firstStart)
+                .endTime(firstEnd)
                 .status(ReservationStatus.PENDING)
-                .price(new BigDecimal("100.00"))
+                .price(pricingService.resolvePrice(room, firstStart, firstEnd, null))
                 .build());
 
         reservationRepository.save(Reservation.builder()
                 .user(user)
                 .resource(van)
-                .startTime(second)
-                .endTime(second.plusHours(3))
+                .startTime(secondStart)
+                .endTime(secondEnd)
                 .status(ReservationStatus.CONFIRMED)
-                .price(new BigDecimal("106.50"))
+                .price(pricingService.resolvePrice(van, secondStart, secondEnd, null))
                 .build());
 
         reservationRepository.save(Reservation.builder()
                 .user(user2)
                 .resource(room)
-                .startTime(third)
-                .endTime(third.plusHours(1))
+                .startTime(thirdStart)
+                .endTime(thirdEnd)
                 .status(ReservationStatus.CANCELLED)
-                .price(new BigDecimal("50.00"))
+                .price(pricingService.resolvePrice(room, thirdStart, thirdEnd, null))
                 .build());
     }
 }

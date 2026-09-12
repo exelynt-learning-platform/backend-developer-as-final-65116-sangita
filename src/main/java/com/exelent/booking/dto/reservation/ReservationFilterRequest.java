@@ -1,24 +1,22 @@
 package com.exelent.booking.dto.reservation;
 
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.exception.ApiException;
+import com.exelent.booking.exception.ApiMessages;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
-import org.springframework.http.HttpStatus;
 
 public record ReservationFilterRequest(
         ReservationStatus status,
+
+        @DecimalMin(value = "0.00", message = ApiMessages.MIN_PRICE_NEGATIVE)
         BigDecimal minPrice,
+
+        @DecimalMin(value = "0.00", message = ApiMessages.MAX_PRICE_NEGATIVE)
         BigDecimal maxPrice
 ) {
-    public void validate() {
-        if (minPrice != null && minPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "minPrice cannot be negative");
-        }
-        if (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "maxPrice cannot be negative");
-        }
-        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "minPrice cannot be greater than maxPrice");
-        }
+    @AssertTrue(message = ApiMessages.MIN_PRICE_GREATER_THAN_MAX)
+    public boolean isPriceRangeValid() {
+        return minPrice == null || maxPrice == null || minPrice.compareTo(maxPrice) <= 0;
     }
 }
