@@ -8,14 +8,13 @@ import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -71,14 +70,10 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage(), request, null);
     }
 
+    // @PreAuthorize failures reach MVC as AccessDeniedException (401 still goes through RestAuthenticationEntryPoint)
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleDenied(AccessDeniedException ex, HttpServletRequest request) {
         return error(HttpStatus.FORBIDDEN, "Access denied", request, null);
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ApiErrorResponse> handleAuth(AuthenticationException ex, HttpServletRequest request) {
-        return error(HttpStatus.UNAUTHORIZED, "Please login", request, null);
     }
 
     @ExceptionHandler(Exception.class)

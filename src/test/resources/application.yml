@@ -18,3 +18,12 @@ jwt:
 
 # Satisfies ${JWT_SECRET} from the main application.yml during tests
 JWT_SECRET: TestOnlySecretKeyThatIsAtLeastThirtyTwoBytesLong!!
+
+app:
+  seed:
+    enabled: true
+    admin-password: Admin@123
+    user-password: User@123
+  cors:
+    allowed-origins:
+      - http://localhost:8080

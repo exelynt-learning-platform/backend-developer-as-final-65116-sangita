@@ -1,15 +1,14 @@
 package com.exelent.booking.service;
 
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.reservation.ReservationCreateRequest;
 import com.exelent.booking.dto.reservation.ReservationResponse;
 import com.exelent.booking.exception.ApiException;
 import com.exelent.booking.repository.ReservationRepository;
-import com.exelent.booking.repository.UserRepository;
 import com.exelent.booking.security.AuthHelper;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,8 +38,6 @@ class ReservationServiceTest {
     private ReservationRepository reservationRepository;
     @Mock
     private ResourceService resourceService;
-    @Mock
-    private UserRepository userRepository;
     @Mock
     private AuthHelper authHelper;
 
@@ -67,9 +65,8 @@ class ReservationServiceTest {
     @Test
     void createUsesJwtUserAndCalculatesPrice() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
-        when(userRepository.getReferenceById(10L)).thenReturn(user);
         when(resourceService.getResource(5L)).thenReturn(resource);
-        when(reservationRepository.existsOverlappingReservation(anyLong(), any(), any(), any(), anyLong())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservation(anyLong(), any(), any(), any(), isNull())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
             Reservation saved = invocation.getArgument(0);
             saved.setId(99L);
@@ -86,15 +83,14 @@ class ReservationServiceTest {
 
         ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
         verify(reservationRepository).save(captor.capture());
-        assertThat(captor.getValue().getUser().getId()).isEqualTo(10L);
+        assertThat(captor.getValue().getUser()).isSameAs(user);
     }
 
     @Test
     void userCannotCreateConfirmedReservation() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
-        when(userRepository.getReferenceById(10L)).thenReturn(user);
         when(resourceService.getResource(5L)).thenReturn(resource);
-        when(reservationRepository.existsOverlappingReservation(anyLong(), any(), any(), any(), anyLong())).thenReturn(false);
+        when(reservationRepository.existsOverlappingReservation(anyLong(), any(), any(), any(), isNull())).thenReturn(false);
 
         ReservationCreateRequest request = new ReservationCreateRequest(5L, start, end, new BigDecimal("20.00"), ReservationStatus.CONFIRMED);
 
@@ -129,9 +125,8 @@ class ReservationServiceTest {
     @Test
     void overlappingReservationIsRejected() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
-        when(userRepository.getReferenceById(10L)).thenReturn(user);
         when(resourceService.getResource(5L)).thenReturn(resource);
-        when(reservationRepository.existsOverlappingReservation(eq(5L), any(), eq(start), eq(end), eq(-1L))).thenReturn(true);
+        when(reservationRepository.existsOverlappingReservation(eq(5L), any(), eq(start), eq(end), isNull())).thenReturn(true);
 
         ReservationCreateRequest request = new ReservationCreateRequest(5L, start, end, new BigDecimal("10.00"), null);
 

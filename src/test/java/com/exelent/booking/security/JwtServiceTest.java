@@ -53,7 +53,7 @@ class JwtServiceTest {
     void rejectsShortSecret() {
         assertThatThrownBy(() -> new JwtService(new JwtProperties("too-short", 1000)))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("32 bytes");
+                .hasMessageContaining("JWT_SECRET");
     }
 
     @Test

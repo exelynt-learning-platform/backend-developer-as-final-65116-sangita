@@ -21,7 +21,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
             SELECT COUNT(r) > 0 FROM Reservation r
             WHERE r.resource.id = :resourceId
               AND r.status IN :statuses
-              AND r.id <> :excludeId
+              AND (:excludeId IS NULL OR r.id <> :excludeId)
               AND r.startTime < :endTime
               AND r.endTime > :startTime
             """)

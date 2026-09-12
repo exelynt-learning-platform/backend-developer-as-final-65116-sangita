@@ -1,0 +1,6 @@
+app:
+  seed:
+    enabled: false
+  cors:
+    allowed-origins:
+      - ${APP_CORS_ORIGIN:http://localhost:8080}

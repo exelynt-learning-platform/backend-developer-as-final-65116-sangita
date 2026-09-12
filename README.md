@@ -35,7 +35,7 @@ Docker (optional):
 docker compose up -d mysql
 ```
 
-Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users are not created on `prod`.
+Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users stay off (`app.seed.enabled=false`) and cannot be turned on under `prod`. CORS origins are an explicit list (`app.cors.allowed-origins`); wildcards are rejected.
 
 ## Env vars
 
@@ -47,12 +47,15 @@ Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users
 | DB_PASSWORD | root |
 | JWT_SECRET | **required** (no default; min 32 chars) |
 | JWT_EXPIRATION_MS | 86400000 |
+| APP_SEED_ENABLED | false (true in `dev` / `h2` only) |
+| SEED_ADMIN_PASSWORD / SEED_USER_PASSWORD | local demo defaults in `dev` / `h2` |
+| APP_CORS_ORIGIN | prod fallback `http://localhost:8080` |
 
 See `.env.example`.
 
-## Test users (dev / h2 / test only)
+## Test users (opt-in)
 
-Created on first start unless the `prod` profile is active:
+Created only when `app.seed.enabled=true` (already set in `dev` and `h2` profiles). Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`.
 
 - admin / Admin@123  (ADMIN)
 - user / User@123    (USER)

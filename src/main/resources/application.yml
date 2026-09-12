@@ -32,6 +32,14 @@ jwt:
   secret: ${JWT_SECRET}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
+app:
+  seed:
+    enabled: false
+  cors:
+    allowed-origins:
+      - http://localhost:8080
+      - http://localhost:3000
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

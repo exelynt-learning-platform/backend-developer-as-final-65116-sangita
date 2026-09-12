@@ -1,5 +1,6 @@
 package com.exelent.booking.security;
 
+import com.exelent.booking.config.CorsProperties;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +28,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtFilter;
     private final RestAuthenticationEntryPoint authEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final CorsProperties corsProperties;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -57,10 +59,19 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> origins = corsProperties.allowedOrigins() == null || corsProperties.allowedOrigins().isEmpty()
+                ? List.of("http://localhost:8080")
+                : corsProperties.allowedOrigins();
+        if (origins.stream().anyMatch(origin -> origin == null || origin.isBlank() || origin.contains("*"))) {
+            throw new IllegalStateException(
+                    "app.cors.allowed-origins must be an explicit list (no wildcards). Example: http://localhost:3000"
+            );
+        }
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOriginPatterns(List.of("*"));
+        cors.setAllowedOrigins(origins);
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cors.setAllowedHeaders(List.of("*"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        cors.setAllowCredentials(false);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cors);
         return source;

@@ -2,6 +2,7 @@ package com.exelent.booking.security;
 
 import com.exelent.booking.config.JwtProperties;
 import com.exelent.booking.domain.User;
+import com.exelent.booking.exception.JwtConfigurationException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -58,10 +59,10 @@ public class JwtService {
 
     private static SecretKey buildKey(String secret) {
         if (secret == null || secret.isBlank()) {
-            throw new IllegalStateException("JWT_SECRET is required. Set it before starting the app.");
+            throw new JwtConfigurationException("JWT_SECRET is required. Set it before starting the app.");
         }
         if (secret.toLowerCase().contains("replace-with") || secret.toLowerCase().contains("changeme")) {
-            throw new IllegalStateException("JWT_SECRET looks like a placeholder. Set a real secret.");
+            throw new JwtConfigurationException("JWT_SECRET looks like a placeholder. Set a real secret.");
         }
 
         byte[] keyBytes;
@@ -71,7 +72,7 @@ public class JwtService {
             keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }
         if (keyBytes.length < 32) {
-            throw new IllegalStateException("JWT secret must be at least 32 bytes for HS256");
+            throw new JwtConfigurationException("JWT_SECRET must be at least 32 bytes for HS256");
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }

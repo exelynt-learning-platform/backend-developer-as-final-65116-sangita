@@ -11,3 +11,9 @@ spring:
 
 jwt:
   secret: H2LocalDevOnlySecretKeyThatIsAtLeast32BytesLong!!
+
+app:
+  seed:
+    enabled: true
+    admin-password: ${SEED_ADMIN_PASSWORD:Admin@123}
+    user-password: ${SEED_USER_PASSWORD:User@123}

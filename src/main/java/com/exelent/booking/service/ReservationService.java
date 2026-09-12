@@ -1,28 +1,26 @@
 package com.exelent.booking.service;
 
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.PagedResponse;
 import com.exelent.booking.dto.reservation.ReservationCreateRequest;
+import com.exelent.booking.dto.reservation.ReservationFilterRequest;
 import com.exelent.booking.dto.reservation.ReservationResponse;
 import com.exelent.booking.dto.reservation.ReservationUpdateRequest;
 import com.exelent.booking.exception.ApiException;
 import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.repository.ReservationSpecifications;
-import com.exelent.booking.repository.UserRepository;
 import com.exelent.booking.security.AuthHelper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,44 +29,19 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ReservationService {
 
-    private static final Set<String> ALLOWED_SORT = Set.of(
-            "id", "price", "status", "startTime", "endTime", "createdAt", "updatedAt"
-    );
-
     private final ReservationRepository reservationRepository;
     private final ResourceService resourceService;
-    private final UserRepository userRepository;
     private final AuthHelper authHelper;
 
     @Transactional(readOnly = true)
-    public PagedResponse<ReservationResponse> search(
-            ReservationStatus status,
-            BigDecimal minPrice,
-            BigDecimal maxPrice,
-            Pageable pageable
-    ) {
-        if (minPrice != null && minPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "minPrice cannot be negative");
-        }
-        if (maxPrice != null && maxPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "maxPrice cannot be negative");
-        }
-        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "minPrice cannot be greater than maxPrice");
-        }
-        for (Sort.Order order : pageable.getSort()) {
-            if (!ALLOWED_SORT.contains(order.getProperty())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot sort by " + order.getProperty());
-            }
-        }
-
+    public PagedResponse<ReservationResponse> search(ReservationFilterRequest filter, Pageable pageable) {
         User loggedIn = authHelper.getLoggedInUser();
-        // normal users only see their own bookings
         Long userId = loggedIn.getRole() == Role.ADMIN ? null : loggedIn.getId();
 
         return PagedResponse.from(
                 reservationRepository
-                        .findAll(ReservationSpecifications.withFilters(userId, status, minPrice, maxPrice), pageable)
+                        .findAll(ReservationSpecifications.withFilters(
+                                userId, filter.status(), filter.minPrice(), filter.maxPrice()), pageable)
                         .map(ReservationResponse::from)
         );
     }
@@ -80,19 +53,17 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse create(ReservationCreateRequest request) {
-        User loggedIn = authHelper.getLoggedInUser();
-        // always take owner from jwt
-        User owner = userRepository.getReferenceById(loggedIn.getId());
+        User owner = authHelper.getLoggedInUser();
         BookableResource resource = resourceService.getResource(request.resourceId());
 
         if (!resource.isAvailable()) {
             throw new ApiException(HttpStatus.CONFLICT, "This resource is not available");
         }
-        checkOverlap(resource.getId(), request.startTime(), request.endTime(), -1L);
+        checkOverlap(resource.getId(), request.startTime(), request.endTime(), null);
 
         ReservationStatus status = ReservationStatus.PENDING;
         if (request.status() != null) {
-            if (loggedIn.getRole() == Role.USER && request.status() != ReservationStatus.PENDING) {
+            if (owner.getRole() == Role.USER && request.status() != ReservationStatus.PENDING) {
                 throw new ApiException(HttpStatus.FORBIDDEN, "Users can only create PENDING reservations");
             }
             status = request.status();
@@ -161,13 +132,13 @@ public class ReservationService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reservation not found"));
     }
 
-    private void checkOverlap(Long resourceId, LocalDateTime start, LocalDateTime end, Long ignoreId) {
+    private void checkOverlap(Long resourceId, LocalDateTime start, LocalDateTime end, Long excludeId) {
         boolean overlap = reservationRepository.existsOverlappingReservation(
                 resourceId,
                 List.of(ReservationStatus.PENDING, ReservationStatus.CONFIRMED),
                 start,
                 end,
-                ignoreId
+                excludeId
         );
         if (overlap) {
             throw new ApiException(HttpStatus.CONFLICT, "This time slot is already booked");
