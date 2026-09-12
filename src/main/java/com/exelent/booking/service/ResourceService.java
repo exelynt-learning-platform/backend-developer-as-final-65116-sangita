@@ -5,9 +5,9 @@ import com.exelent.booking.dto.PagedResponse;
 import com.exelent.booking.dto.resource.ResourceRequest;
 import com.exelent.booking.dto.resource.ResourceResponse;
 import com.exelent.booking.exception.ApiException;
+import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ResourceService {
 
     private final ResourceRepository resourceRepository;
+    private final ReservationRepository reservationRepository;
 
     @Transactional(readOnly = true)
     public PagedResponse<ResourceResponse> findAll(Pageable pageable) {
@@ -57,16 +58,19 @@ public class ResourceService {
     @Transactional
     public void delete(Long id) {
         BookableResource resource = getResource(id);
-        try {
-            resourceRepository.delete(resource);
-            resourceRepository.flush();
-        } catch (DataIntegrityViolationException e) {
+        if (reservationRepository.existsByResource_Id(id)) {
             throw new ApiException(HttpStatus.CONFLICT, "Can't delete this resource, it already has reservations");
         }
+        resourceRepository.delete(resource);
     }
 
     public BookableResource getResource(Long id) {
         return resourceRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Resource not found"));
+    }
+
+    public BookableResource lockResource(Long id) {
+        return resourceRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Resource not found"));
     }
 }

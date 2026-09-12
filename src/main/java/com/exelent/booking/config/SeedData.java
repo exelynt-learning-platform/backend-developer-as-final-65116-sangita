@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
+@Profile({"dev", "h2"})
 @ConditionalOnProperty(prefix = "app.seed", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class SeedData implements CommandLineRunner {
@@ -53,7 +55,17 @@ public class SeedData implements CommandLineRunner {
                     "app.seed.enabled=true requires app.seed.admin-password and app.seed.user-password"
             );
         }
-        warnIfDemoPasswords();
+        boolean demoPasswords = DEMO_ADMIN_PASSWORD.equals(seedProperties.adminPassword())
+                || DEMO_USER_PASSWORD.equals(seedProperties.userPassword());
+        if (demoPasswords && !environment.matchesProfiles("dev", "h2")) {
+            throw new IllegalStateException(
+                    "Documented demo passwords cannot be used outside the dev/h2 profiles. "
+                            + "Set SEED_ADMIN_PASSWORD and SEED_USER_PASSWORD."
+            );
+        }
+        if (demoPasswords) {
+            log.warn("Seed is using documented demo passwords. Override with SEED_ADMIN_PASSWORD and SEED_USER_PASSWORD.");
+        }
 
         User regularUser = findOrCreateUser("user", "user@gmail.com", Role.USER, seedProperties.userPassword());
         User user2 = findOrCreateUser("user2", "user2@gmail.com", Role.USER, seedProperties.userPassword());
@@ -62,22 +74,6 @@ public class SeedData implements CommandLineRunner {
         Map<String, BookableResource> resources = seedResources();
         seedReservations(regularUser, user2, resources.get(ROOM_NAME), resources.get(VAN_NAME));
         log.info("Seed data ready (admin, user, user2). Disable with app.seed.enabled=false");
-    }
-
-    private void warnIfDemoPasswords() {
-        boolean demoPasswords = DEMO_ADMIN_PASSWORD.equals(seedProperties.adminPassword())
-                || DEMO_USER_PASSWORD.equals(seedProperties.userPassword());
-        if (!demoPasswords) {
-            return;
-        }
-        if (environment.matchesProfiles("dev", "h2")) {
-            log.warn("Seed is using documented demo passwords. Override with SEED_ADMIN_PASSWORD and SEED_USER_PASSWORD.");
-        } else {
-            log.warn(
-                    "Seed is using documented demo passwords outside the dev/h2 profiles. "
-                            + "Set SEED_ADMIN_PASSWORD and SEED_USER_PASSWORD before deploying."
-            );
-        }
     }
 
     private User findOrCreateUser(String username, String email, Role role, String rawPassword) {

@@ -35,7 +35,7 @@ Docker (optional):
 docker compose up -d mysql
 ```
 
-Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users stay off (`app.seed.enabled=false`) and cannot be turned on under `prod`. CORS origins are an explicit list (`app.cors.allowed-origins`); wildcards are rejected.
+Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users only exist on `dev`/`h2` (`@Profile`) and stay off in prod. CORS origins are an explicit list (`app.cors.allowed-origins`); wildcards are rejected.
 
 ## Env vars
 
@@ -55,7 +55,7 @@ See `.env.example`.
 
 ## Test users (opt-in)
 
-Created only when `app.seed.enabled=true` (already set in `dev` and `h2` profiles). Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`. Demo defaults are for local use only; the app logs a warning if they are used, especially outside `dev`/`h2`.
+Created only on the `dev` and `h2` profiles when `app.seed.enabled=true`. Staging/prod cannot seed these users. Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`. Documented demo passwords are refused outside `dev`/`h2`.
 
 - admin / Admin@123  (ADMIN)
 - user / User@123    (USER)

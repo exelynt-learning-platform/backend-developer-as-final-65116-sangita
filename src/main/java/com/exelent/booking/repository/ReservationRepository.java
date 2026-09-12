@@ -19,6 +19,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
 
     boolean existsByUser_Id(Long userId);
 
+    boolean existsByResource_Id(Long resourceId);
+
     @Query("""
             SELECT COUNT(r) > 0 FROM Reservation r
             WHERE r.resource.id = :resourceId

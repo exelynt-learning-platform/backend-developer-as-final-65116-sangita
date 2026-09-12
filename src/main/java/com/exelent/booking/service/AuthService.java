@@ -9,9 +9,9 @@ import com.exelent.booking.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,7 +35,7 @@ public class AuthService {
                     user.getUsername(),
                     user.getRole().name()
             );
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
     }

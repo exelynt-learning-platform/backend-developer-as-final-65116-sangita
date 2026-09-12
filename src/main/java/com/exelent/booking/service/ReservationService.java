@@ -54,7 +54,7 @@ public class ReservationService {
     @Transactional
     public ReservationResponse create(ReservationCreateRequest request) {
         User owner = accessPolicy.currentUser();
-        BookableResource resource = resourceService.getResource(request.resourceId());
+        BookableResource resource = resourceService.lockResource(request.resourceId());
 
         if (!resource.isAvailable()) {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
@@ -82,7 +82,7 @@ public class ReservationService {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.CANCELLED_CANNOT_UPDATE);
         }
 
-        BookableResource resource = resourceService.getResource(request.resourceId());
+        BookableResource resource = resourceService.lockResource(request.resourceId());
         if (!resource.isAvailable()) {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
         }

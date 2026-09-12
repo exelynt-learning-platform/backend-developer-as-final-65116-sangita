@@ -70,7 +70,7 @@ class ReservationServiceTest {
     @Test
     void createUsesJwtUserAndCalculatesPrice() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
-        when(resourceService.getResource(5L)).thenReturn(resource);
+        when(resourceService.lockResource(5L)).thenReturn(resource);
         when(reservationRepository.existsOverlappingReservation(anyLong(), any(), any(), any(), isNull())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenAnswer(invocation -> {
             Reservation saved = invocation.getArgument(0);
@@ -94,7 +94,7 @@ class ReservationServiceTest {
     @Test
     void userCannotCreateConfirmedReservation() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
-        when(resourceService.getResource(5L)).thenReturn(resource);
+        when(resourceService.lockResource(5L)).thenReturn(resource);
 
         ReservationCreateRequest request = new ReservationCreateRequest(5L, start, end, new BigDecimal("20.00"), ReservationStatus.CONFIRMED);
 
@@ -154,7 +154,7 @@ class ReservationServiceTest {
     @Test
     void overlappingReservationIsRejected() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
-        when(resourceService.getResource(5L)).thenReturn(resource);
+        when(resourceService.lockResource(5L)).thenReturn(resource);
         when(reservationRepository.existsOverlappingReservation(eq(5L), any(), eq(start), eq(end), isNull())).thenReturn(true);
 
         ReservationCreateRequest request = new ReservationCreateRequest(5L, start, end, new BigDecimal("10.00"), null);
