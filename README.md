@@ -55,7 +55,7 @@ See `.env.example`.
 
 ## Test users (opt-in)
 
-Created only on the `dev` and `h2` profiles when `app.seed.enabled=true`. Staging/prod cannot seed these users. Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`. Documented demo passwords are refused outside `dev`/`h2`.
+Created only on the `dev` and `h2` profiles when `app.seed.enabled=true`. Production-adjacent profiles (`prod`, `production`, `staging`, `stage`, `uat`, `qa`) cannot seed these users and cannot use the documented demo passwords. Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`. Documented demo passwords are refused outside `dev`/`h2`.
 
 - admin / Admin@123  (ADMIN)
 - user / User@123    (USER)
@@ -71,9 +71,10 @@ Login with `POST /auth/login`, then send `Authorization: Bearer <token>`.
 ## Roles
 
 USER:
-- can view resources
+- can view resources (read-only)
 - can create reservations (owner is taken from the JWT, not the body)
-- can view / cancel only their own reservations
+- can view / cancel only their own reservations (`POST /api/reservations/{id}/cancel`)
+- cannot update (`PUT`) or delete reservations — those are ADMIN only
 
 ADMIN:
 - full CRUD on resources and reservations
@@ -82,6 +83,12 @@ ADMIN:
 ## Main APIs
 
 Resources: `/api/resources`  (GET for both, POST/PUT/DELETE admin only)
+
+```
+GET /api/resources?type=ROOM&available=true&name=Meeting&page=0&size=10
+```
+
+Optional resource filters: `type`, `available`, `name` (case-insensitive contains).
 
 Reservations: `/api/reservations`
 

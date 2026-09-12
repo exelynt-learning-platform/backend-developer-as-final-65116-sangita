@@ -108,6 +108,7 @@ class ReservationServiceTest {
 
     @Test
     void cancelledReservationCannotBeUpdated() {
+        User admin = User.builder().id(1L).username("admin").email("admin@gmail.com").password("x").role(Role.ADMIN).enabled(true).build();
         Reservation reservation = Reservation.builder()
                 .id(8L)
                 .user(user)
@@ -118,7 +119,7 @@ class ReservationServiceTest {
                 .price(new BigDecimal("50.00"))
                 .build();
         when(reservationRepository.findById(8L)).thenReturn(java.util.Optional.of(reservation));
-        when(authHelper.getLoggedInUser()).thenReturn(user);
+        when(authHelper.getLoggedInUser()).thenReturn(admin);
 
         ReservationUpdateRequest request =
                 new ReservationUpdateRequest(5L, start, end, new BigDecimal("50.00"), ReservationStatus.CONFIRMED);
@@ -127,6 +128,20 @@ class ReservationServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).getStatus())
                 .isEqualTo(HttpStatus.CONFLICT);
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void userCannotUpdateReservation() {
+        when(authHelper.getLoggedInUser()).thenReturn(user);
+
+        ReservationUpdateRequest request =
+                new ReservationUpdateRequest(5L, start, end, new BigDecimal("50.00"), ReservationStatus.PENDING);
+
+        assertThatThrownBy(() -> reservationService.update(8L, request))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.FORBIDDEN);
         verify(reservationRepository, never()).save(any());
     }
 

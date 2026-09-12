@@ -2,12 +2,14 @@ package com.exelent.booking.service;
 
 import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.dto.PagedResponse;
+import com.exelent.booking.dto.resource.ResourceFilterRequest;
 import com.exelent.booking.dto.resource.ResourceRequest;
 import com.exelent.booking.dto.resource.ResourceResponse;
 import com.exelent.booking.exception.ApiException;
 import com.exelent.booking.exception.ApiMessages;
 import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.repository.ResourceRepository;
+import com.exelent.booking.repository.ResourceSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -22,8 +24,14 @@ public class ResourceService {
     private final ReservationRepository reservationRepository;
 
     @Transactional(readOnly = true)
-    public PagedResponse<ResourceResponse> findAll(Pageable pageable) {
-        return PagedResponse.from(resourceRepository.findAll(pageable).map(ResourceResponse::from));
+    public PagedResponse<ResourceResponse> findAll(ResourceFilterRequest filter, Pageable pageable) {
+        ResourceFilterRequest safeFilter = filter == null ? new ResourceFilterRequest(null, null, null) : filter;
+        return PagedResponse.from(
+                resourceRepository
+                        .findAll(ResourceSpecifications.withFilters(
+                                safeFilter.type(), safeFilter.available(), safeFilter.name()), pageable)
+                        .map(ResourceResponse::from)
+        );
     }
 
     @Transactional(readOnly = true)

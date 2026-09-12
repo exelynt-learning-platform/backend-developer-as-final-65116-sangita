@@ -51,8 +51,8 @@ public class SeedData implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (environment.matchesProfiles("prod")) {
-            throw new IllegalStateException("Seed data cannot run with the prod profile");
+        if (environment.matchesProfiles("prod", "production", "staging", "stage", "uat", "qa")) {
+            throw new IllegalStateException("Seed data cannot run with a production-adjacent profile");
         }
         if (seedProperties.adminPassword() == null || seedProperties.adminPassword().isBlank()
                 || seedProperties.userPassword() == null || seedProperties.userPassword().isBlank()) {

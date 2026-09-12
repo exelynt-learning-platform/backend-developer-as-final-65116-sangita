@@ -47,7 +47,7 @@
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
-            "url": "{{baseUrl}}/api/resources?page=0&size=10"
+            "url": "{{baseUrl}}/api/resources?page=0&size=10&type=ROOM&available=true&name=Meeting"
           }
         },
         {

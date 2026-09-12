@@ -31,6 +31,12 @@ public class ReservationAccessPolicy {
         }
     }
 
+    public void requireAdmin() {
+        if (currentUser().getRole() != Role.ADMIN) {
+            throw new ApiException(HttpStatus.FORBIDDEN, ApiMessages.ADMIN_ONLY);
+        }
+    }
+
     public void requireOwnerOrAdmin(Reservation reservation) {
         User loggedIn = currentUser();
         if (loggedIn.getRole() != Role.ADMIN && !reservation.getUser().getId().equals(loggedIn.getId())) {

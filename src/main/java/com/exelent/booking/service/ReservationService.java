@@ -39,7 +39,7 @@ public class ReservationService {
 
         return PagedResponse.from(
                 reservationRepository
-                        .search(ReservationSpecifications.withFilters(
+                        .findAll(ReservationSpecifications.withFilters(
                                 userId, filter.status(), filter.minPrice(), filter.maxPrice()), pageable)
                         .map(ReservationResponse::from)
         );
@@ -72,8 +72,8 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse update(Long id, ReservationUpdateRequest request) {
+        accessPolicy.requireAdmin();
         Reservation reservation = getById(id);
-        accessPolicy.requireOwnerOrAdmin(reservation);
         validateUpdatable(reservation);
 
         BookableResource resource = resourceService.lockResource(request.resourceId());
@@ -96,6 +96,7 @@ public class ReservationService {
 
     @Transactional
     public void delete(Long id) {
+        accessPolicy.requireAdmin();
         reservationRepository.delete(getById(id));
     }
 

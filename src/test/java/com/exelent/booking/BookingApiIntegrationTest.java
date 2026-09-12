@@ -65,6 +65,14 @@ class BookingApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(3))));
 
+        mockMvc.perform(get("/api/resources")
+                        .header("Authorization", bearer(userToken))
+                        .param("type", "ROOM")
+                        .param("available", "true")
+                        .param("name", "Meeting"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].type").value("ROOM"));
+
         mockMvc.perform(post("/api/resources")
                         .header("Authorization", bearer(userToken))
                         .contentType(MediaType.APPLICATION_JSON)

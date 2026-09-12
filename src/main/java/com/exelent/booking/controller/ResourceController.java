@@ -1,6 +1,7 @@
 package com.exelent.booking.controller;
 
 import com.exelent.booking.dto.PagedResponse;
+import com.exelent.booking.dto.resource.ResourceFilterRequest;
 import com.exelent.booking.dto.resource.ResourceRequest;
 import com.exelent.booking.dto.resource.ResourceResponse;
 import com.exelent.booking.service.ResourceService;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -30,8 +32,11 @@ public class ResourceController {
     private final ResourceService resourceService;
 
     @GetMapping
-    public PagedResponse<ResourceResponse> getAll(@PageableDefault(size = 10, sort = "id") Pageable pageable) {
-        return resourceService.findAll(pageable);
+    public PagedResponse<ResourceResponse> getAll(
+            @ModelAttribute ResourceFilterRequest filter,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable
+    ) {
+        return resourceService.findAll(filter, pageable);
     }
 
     @GetMapping("/{id}")
