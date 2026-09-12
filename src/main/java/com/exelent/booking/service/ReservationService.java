@@ -8,7 +8,6 @@ import com.exelent.booking.dto.PagedResponse;
 import com.exelent.booking.dto.reservation.ReservationCreateRequest;
 import com.exelent.booking.dto.reservation.ReservationFilterRequest;
 import com.exelent.booking.dto.reservation.ReservationResponse;
-import com.exelent.booking.dto.reservation.ReservationSort;
 import com.exelent.booking.dto.reservation.ReservationUpdateRequest;
 import com.exelent.booking.exception.ApiException;
 import com.exelent.booking.exception.ApiMessages;
@@ -34,7 +33,7 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public PagedResponse<ReservationResponse> search(ReservationFilterRequest filter, Pageable pageable) {
         filter.validate();
-        ReservationSort.validate(pageable.getSort());
+        ReservationSortValidator.validate(pageable.getSort());
 
         User loggedIn = accessPolicy.currentUser();
         Long userId = accessPolicy.listScopeUserId(loggedIn);
@@ -60,8 +59,8 @@ public class ReservationService {
         if (!resource.isAvailable()) {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
         }
-        checkOverlap(resource.getId(), request.startTime(), request.endTime(), null);
         accessPolicy.assertCanCreateWithStatus(owner, request.status());
+        checkOverlap(resource.getId(), request.startTime(), request.endTime(), null);
 
         ReservationStatus status = request.status() == null ? ReservationStatus.PENDING : request.status();
         Reservation saved = reservationRepository.save(Reservation.builder()
@@ -78,8 +77,17 @@ public class ReservationService {
     @Transactional
     public ReservationResponse update(Long id, ReservationUpdateRequest request) {
         Reservation reservation = getById(id);
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.CANCELLED_CANNOT_UPDATE);
+        }
+
         BookableResource resource = resourceService.getResource(request.resourceId());
-        checkOverlap(resource.getId(), request.startTime(), request.endTime(), reservation.getId());
+        if (!resource.isAvailable()) {
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
+        }
+        if (request.status() != ReservationStatus.CANCELLED) {
+            checkOverlap(resource.getId(), request.startTime(), request.endTime(), reservation.getId());
+        }
 
         reservation.setResource(resource);
         reservation.setStartTime(request.startTime());

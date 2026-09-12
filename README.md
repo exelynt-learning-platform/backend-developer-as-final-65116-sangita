@@ -55,7 +55,7 @@ See `.env.example`.
 
 ## Test users (opt-in)
 
-Created only when `app.seed.enabled=true` (already set in `dev` and `h2` profiles). Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`.
+Created only when `app.seed.enabled=true` (already set in `dev` and `h2` profiles). Passwords can be overridden with `SEED_ADMIN_PASSWORD` and `SEED_USER_PASSWORD`. Demo defaults are for local use only; the app logs a warning if they are used, especially outside `dev`/`h2`.
 
 - admin / Admin@123  (ADMIN)
 - user / User@123    (USER)

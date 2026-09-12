@@ -36,25 +36,29 @@ public class JwtService {
                 .compact();
     }
 
-    public String extractUsername(String token) {
-        return parseClaims(token).getSubject();
-    }
-
-    public boolean isTokenValid(String token, User user) {
-        String username = extractUsername(token);
-        return username.equalsIgnoreCase(user.getUsername()) && !isExpired(token);
-    }
-
-    private boolean isExpired(String token) {
-        return parseClaims(token).getExpiration().before(new Date());
-    }
-
-    private Claims parseClaims(String token) {
+    public Claims parseToken(String token) {
         return Jwts.parser()
                 .verifyWith(signingKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public String extractUsername(Claims claims) {
+        return claims.getSubject();
+    }
+
+    public String extractUsername(String token) {
+        return extractUsername(parseToken(token));
+    }
+
+    public boolean isTokenValid(Claims claims, User user) {
+        return extractUsername(claims).equalsIgnoreCase(user.getUsername())
+                && !claims.getExpiration().before(new Date());
+    }
+
+    public boolean isTokenValid(String token, User user) {
+        return isTokenValid(parseToken(token), user);
     }
 
     private static SecretKey buildKey(String secret) {
@@ -66,12 +70,20 @@ public class JwtService {
         }
 
         byte[] keyBytes;
+        boolean decodedAsBase64 = false;
         try {
             keyBytes = Decoders.BASE64.decode(secret);
+            decodedAsBase64 = true;
         } catch (RuntimeException ex) {
             keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         }
         if (keyBytes.length < 32) {
+            if (decodedAsBase64) {
+                throw new JwtConfigurationException(
+                        "JWT_SECRET Base64-decoded to " + keyBytes.length
+                                + " bytes; HS256 needs at least 32. Use a longer key or a raw string of 32+ characters."
+                );
+            }
             throw new JwtConfigurationException("JWT_SECRET must be at least 32 bytes for HS256");
         }
         return Keys.hmacShaKeyFor(keyBytes);

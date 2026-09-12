@@ -1,9 +1,6 @@
 package com.exelent.booking.dto.reservation;
 
-import com.exelent.booking.exception.ApiException;
 import java.util.Set;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 
 public final class ReservationSort {
 
@@ -14,13 +11,5 @@ public final class ReservationSort {
     );
 
     private ReservationSort() {
-    }
-
-    public static void validate(Sort sort) {
-        sort.forEach(order -> {
-            if (!ALLOWED.contains(order.getProperty())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot sort by " + order.getProperty());
-            }
-        });
     }
 }

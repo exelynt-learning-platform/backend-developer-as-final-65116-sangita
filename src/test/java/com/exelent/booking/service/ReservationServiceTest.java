@@ -7,6 +7,7 @@ import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.reservation.ReservationCreateRequest;
 import com.exelent.booking.dto.reservation.ReservationResponse;
+import com.exelent.booking.dto.reservation.ReservationUpdateRequest;
 import com.exelent.booking.exception.ApiException;
 import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.security.AuthHelper;
@@ -94,7 +95,6 @@ class ReservationServiceTest {
     void userCannotCreateConfirmedReservation() {
         when(authHelper.getLoggedInUser()).thenReturn(user);
         when(resourceService.getResource(5L)).thenReturn(resource);
-        when(reservationRepository.existsOverlappingReservation(anyLong(), any(), any(), any(), isNull())).thenReturn(false);
 
         ReservationCreateRequest request = new ReservationCreateRequest(5L, start, end, new BigDecimal("20.00"), ReservationStatus.CONFIRMED);
 
@@ -102,6 +102,30 @@ class ReservationServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).getStatus())
                 .isEqualTo(HttpStatus.FORBIDDEN);
+        verify(reservationRepository, never()).existsOverlappingReservation(anyLong(), any(), any(), any(), isNull());
+        verify(reservationRepository, never()).save(any());
+    }
+
+    @Test
+    void cancelledReservationCannotBeUpdated() {
+        Reservation reservation = Reservation.builder()
+                .id(8L)
+                .user(user)
+                .resource(resource)
+                .startTime(start)
+                .endTime(end)
+                .status(ReservationStatus.CANCELLED)
+                .price(new BigDecimal("50.00"))
+                .build();
+        when(reservationRepository.findById(8L)).thenReturn(java.util.Optional.of(reservation));
+
+        ReservationUpdateRequest request =
+                new ReservationUpdateRequest(5L, start, end, new BigDecimal("50.00"), ReservationStatus.CONFIRMED);
+
+        assertThatThrownBy(() -> reservationService.update(8L, request))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
         verify(reservationRepository, never()).save(any());
     }
 

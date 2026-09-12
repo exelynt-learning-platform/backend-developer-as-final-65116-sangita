@@ -8,6 +8,7 @@ public final class ApiMessages {
     public static final String ALREADY_CANCELLED = "Already cancelled";
     public static final String OWN_RESERVATIONS_ONLY = "You can only view your own reservations";
     public static final String RESERVATION_NOT_FOUND = "Reservation not found";
+    public static final String CANCELLED_CANNOT_UPDATE = "Cancelled reservations cannot be updated";
 
     private ApiMessages() {
     }

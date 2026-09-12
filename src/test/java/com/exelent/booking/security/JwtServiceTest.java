@@ -64,6 +64,14 @@ class JwtServiceTest {
     }
 
     @Test
+    void rejectsShortBase64Secret() {
+        String shortBase64 = java.util.Base64.getEncoder().encodeToString("too-short".getBytes());
+        assertThatThrownBy(() -> new JwtService(new JwtProperties(shortBase64, 1000)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Base64-decoded");
+    }
+
+    @Test
     void rejectsPlaceholderSecret() {
         assertThatThrownBy(() -> new JwtService(new JwtProperties(
                 "replace-with-a-long-random-secret-key-min-32-chars",
