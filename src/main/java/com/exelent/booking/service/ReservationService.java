@@ -54,7 +54,7 @@ public class ReservationService {
     public ReservationResponse create(ReservationCreateRequest request) {
         User owner = accessPolicy.currentUser();
         BookableResource resource = resourceService.lockResource(request.resourceId());
-        assertResourceAvailable(resource);
+        validateResourceAvailable(resource);
         accessPolicy.assertCanCreateWithStatus(owner, request.status());
         checkOverlap(resource.getId(), request.startTime(), request.endTime(), null);
 
@@ -74,10 +74,10 @@ public class ReservationService {
     public ReservationResponse update(Long id, ReservationUpdateRequest request) {
         Reservation reservation = getById(id);
         accessPolicy.requireOwnerOrAdmin(reservation);
-        assertUpdatable(reservation);
+        validateUpdatable(reservation);
 
         BookableResource resource = resourceService.lockResource(request.resourceId());
-        assertResourceAvailable(resource);
+        validateResourceAvailable(resource);
         if (request.status() != ReservationStatus.CANCELLED) {
             checkOverlap(resource.getId(), request.startTime(), request.endTime(), reservation.getId());
         }
@@ -99,13 +99,13 @@ public class ReservationService {
         reservationRepository.delete(getById(id));
     }
 
-    private void assertUpdatable(Reservation reservation) {
+    private void validateUpdatable(Reservation reservation) {
         if (reservation.getStatus() == ReservationStatus.CANCELLED) {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.CANCELLED_CANNOT_UPDATE);
         }
     }
 
-    private void assertResourceAvailable(BookableResource resource) {
+    private void validateResourceAvailable(BookableResource resource) {
         if (!resource.isAvailable()) {
             throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
         }

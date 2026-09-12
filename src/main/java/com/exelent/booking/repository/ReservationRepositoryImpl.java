@@ -3,9 +3,9 @@ package com.exelent.booking.repository;
 import com.exelent.booking.domain.Reservation;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Order;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -30,7 +30,7 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
     private long count(Specification<Reservation> spec, CriteriaBuilder cb) {
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Reservation> root = countQuery.from(Reservation.class);
-        countQuery.select(cb.count(root));
+        countQuery.select(cb.countDistinct(root));
         Predicate predicate = spec.toPredicate(root, countQuery, cb);
         if (predicate != null) {
             countQuery.where(predicate);
@@ -41,8 +41,6 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
     private List<Reservation> loadPage(Specification<Reservation> spec, Pageable pageable, CriteriaBuilder cb) {
         CriteriaQuery<Reservation> dataQuery = cb.createQuery(Reservation.class);
         Root<Reservation> root = dataQuery.from(Reservation.class);
-        root.fetch("user", JoinType.INNER);
-        root.fetch("resource", JoinType.INNER);
         dataQuery.select(root);
         Predicate predicate = spec.toPredicate(root, dataQuery, cb);
         if (predicate != null) {
@@ -59,9 +57,11 @@ public class ReservationRepositoryImpl implements ReservationRepositoryCustom {
             });
             dataQuery.orderBy(orders);
         }
-        return entityManager.createQuery(dataQuery)
-                .setFirstResult((int) pageable.getOffset())
-                .setMaxResults(pageable.getPageSize())
-                .getResultList();
+
+        TypedQuery<Reservation> query = entityManager.createQuery(dataQuery);
+        query.setHint("jakarta.persistence.fetchgraph", entityManager.getEntityGraph("Reservation.withUserAndResource"));
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+        return query.getResultList();
     }
 }

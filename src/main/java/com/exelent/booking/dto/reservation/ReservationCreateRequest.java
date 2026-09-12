@@ -1,7 +1,7 @@
 package com.exelent.booking.dto.reservation;
 
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.validation.TimeRange;
+import com.exelent.booking.validation.ReservationRequest;
 import com.exelent.booking.validation.ValidTimeRange;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -28,5 +28,5 @@ public record ReservationCreateRequest(
         BigDecimal price,
 
         ReservationStatus status
-) implements TimeRange {
+) implements ReservationRequest {
 }

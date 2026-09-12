@@ -24,11 +24,16 @@ public final class ApiMessages {
     public static final String MIN_PRICE_GREATER_THAN_MAX = "minPrice cannot be greater than maxPrice";
     public static final String END_AFTER_START = "endTime must be after startTime";
     public static final String JWT_EXPIRATION_POSITIVE = "jwt.expiration-ms must be greater than 0";
+    public static final String PLEASE_LOGIN = "Please login";
 
     private ApiMessages() {
     }
 
     public static String cannotSortBy(String property) {
         return "Cannot sort by " + property;
+    }
+
+    public static String invalidValue(String name) {
+        return "Invalid value for '" + name + "'";
     }
 }

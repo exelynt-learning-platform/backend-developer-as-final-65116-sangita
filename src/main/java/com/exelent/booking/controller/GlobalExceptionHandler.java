@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorResponse> handleType(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
-        String msg = "Invalid value for '" + ex.getName() + "'";
+        String msg = ApiMessages.invalidValue(ex.getName());
         if (ex.getRequiredType() != null && ex.getRequiredType().isEnum()) {
             Object[] values = ex.getRequiredType().getEnumConstants();
             List<String> names = new ArrayList<>();

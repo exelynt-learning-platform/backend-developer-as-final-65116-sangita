@@ -36,6 +36,9 @@ public class SeedData implements CommandLineRunner {
     static final String ROOM_NAME = "Meeting Room A";
     static final String VAN_NAME = "Office Van";
     static final String CAMERA_NAME = "Camera Kit";
+    static final int ROOM_PENDING_HOURS = 2;
+    static final int VAN_CONFIRMED_HOURS = 3;
+    static final int ROOM_CANCELLED_HOURS = 1;
 
     private final UserRepository userRepository;
     private final ResourceRepository resourceRepository;
@@ -127,11 +130,11 @@ public class SeedData implements CommandLineRunner {
             return;
         }
         LocalDateTime firstStart = LocalDateTime.of(2026, 12, 1, 9, 0);
-        LocalDateTime firstEnd = firstStart.plusHours(2);
+        LocalDateTime firstEnd = firstStart.plusHours(ROOM_PENDING_HOURS);
         LocalDateTime secondStart = LocalDateTime.of(2026, 12, 2, 9, 0);
-        LocalDateTime secondEnd = secondStart.plusHours(3);
+        LocalDateTime secondEnd = secondStart.plusHours(VAN_CONFIRMED_HOURS);
         LocalDateTime thirdStart = LocalDateTime.of(2026, 12, 3, 9, 0);
-        LocalDateTime thirdEnd = thirdStart.plusHours(1);
+        LocalDateTime thirdEnd = thirdStart.plusHours(ROOM_CANCELLED_HOURS);
 
         reservationRepository.save(Reservation.builder()
                 .user(user)

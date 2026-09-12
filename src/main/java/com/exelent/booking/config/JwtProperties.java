@@ -1,6 +1,7 @@
 package com.exelent.booking.config;
 
 import com.exelent.booking.exception.ApiMessages;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -10,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 public record JwtProperties(
         String secret,
         @Positive(message = ApiMessages.JWT_EXPIRATION_POSITIVE)
+        @Min(value = 1, message = ApiMessages.JWT_EXPIRATION_POSITIVE)
         long expirationMs
 ) {
     public JwtProperties {

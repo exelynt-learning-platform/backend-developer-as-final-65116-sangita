@@ -1,6 +1,7 @@
 package com.exelent.booking.security;
 
 import com.exelent.booking.dto.ApiErrorResponse;
+import com.exelent.booking.exception.ApiMessages;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +24,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex)
             throws IOException {
-        write(response, request, HttpStatus.UNAUTHORIZED, "Please login");
+        write(response, request, HttpStatus.UNAUTHORIZED, ApiMessages.PLEASE_LOGIN);
     }
 
     public void write(HttpServletResponse response, HttpServletRequest request, HttpStatus status, String message)
