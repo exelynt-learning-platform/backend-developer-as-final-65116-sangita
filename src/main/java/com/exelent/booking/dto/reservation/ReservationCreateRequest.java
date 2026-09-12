@@ -4,6 +4,7 @@ import com.exelent.booking.domain.ReservationStatus;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -13,9 +14,11 @@ public record ReservationCreateRequest(
         Long resourceId,
 
         @NotNull(message = "startTime is required")
+        @Future(message = "startTime must be in the future")
         LocalDateTime startTime,
 
         @NotNull(message = "endTime is required")
+        @Future(message = "endTime must be in the future")
         LocalDateTime endTime,
 
         @DecimalMin(value = "0.00", message = "price must be greater than or equal to 0.00")

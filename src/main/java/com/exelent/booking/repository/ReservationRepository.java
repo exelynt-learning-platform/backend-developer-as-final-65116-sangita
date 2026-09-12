@@ -17,6 +17,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long>,
     @EntityGraph(attributePaths = {"user", "resource"})
     Optional<Reservation> findById(Long id);
 
+    boolean existsByUser_Id(Long userId);
+
     @Query("""
             SELECT COUNT(r) > 0 FROM Reservation r
             WHERE r.resource.id = :resourceId

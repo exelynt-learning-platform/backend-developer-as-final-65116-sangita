@@ -40,9 +40,6 @@ public class SeedData implements CommandLineRunner {
         if (environment.matchesProfiles("prod")) {
             throw new IllegalStateException("Seed data cannot run with the prod profile");
         }
-        if (userRepository.count() > 0) {
-            return;
-        }
         if (seedProperties.adminPassword() == null || seedProperties.adminPassword().isBlank()
                 || seedProperties.userPassword() == null || seedProperties.userPassword().isBlank()) {
             throw new IllegalStateException(
@@ -53,69 +50,63 @@ public class SeedData implements CommandLineRunner {
         List<User> users = seedUsers();
         List<BookableResource> resources = seedResources();
         seedReservations(users.get(1), users.get(2), resources.get(0), resources.get(1));
-        log.info("Seed data inserted (admin, user, user2). Disable with app.seed.enabled=false");
+        log.info("Seed data ready (admin, user, user2). Disable with app.seed.enabled=false");
     }
 
     private List<User> seedUsers() {
-        User admin = userRepository.save(User.builder()
-                .username("admin")
-                .email("admin@gmail.com")
-                .password(passwordEncoder.encode(seedProperties.adminPassword()))
-                .role(Role.ADMIN)
-                .enabled(true)
-                .build());
-
-        User user = userRepository.save(User.builder()
-                .username("user")
-                .email("user@gmail.com")
-                .password(passwordEncoder.encode(seedProperties.userPassword()))
-                .role(Role.USER)
-                .enabled(true)
-                .build());
-
-        User user2 = userRepository.save(User.builder()
-                .username("user2")
-                .email("user2@gmail.com")
-                .password(passwordEncoder.encode(seedProperties.userPassword()))
-                .role(Role.USER)
-                .enabled(true)
-                .build());
-
+        User admin = findOrCreateUser("admin", "admin@gmail.com", Role.ADMIN, seedProperties.adminPassword());
+        User user = findOrCreateUser("user", "user@gmail.com", Role.USER, seedProperties.userPassword());
+        User user2 = findOrCreateUser("user2", "user2@gmail.com", Role.USER, seedProperties.userPassword());
         return List.of(admin, user, user2);
     }
 
+    private User findOrCreateUser(String username, String email, Role role, String rawPassword) {
+        return userRepository.findByUsernameIgnoreCase(username)
+                .orElseGet(() -> userRepository.save(User.builder()
+                        .username(username)
+                        .email(email)
+                        .password(passwordEncoder.encode(rawPassword))
+                        .role(role)
+                        .enabled(true)
+                        .build()));
+    }
+
     private List<BookableResource> seedResources() {
-        BookableResource room = resourceRepository.save(BookableResource.builder()
-                .name("Meeting Room A")
-                .description("Room with projector, around 10 people")
-                .type(ResourceType.ROOM)
-                .location("2nd floor")
-                .hourlyRate(new BigDecimal("50.00"))
-                .available(true)
-                .build());
-
-        BookableResource van = resourceRepository.save(BookableResource.builder()
-                .name("Office Van")
-                .description("7 seater")
-                .type(ResourceType.VEHICLE)
-                .location("Parking")
-                .hourlyRate(new BigDecimal("35.50"))
-                .available(true)
-                .build());
-
-        resourceRepository.save(BookableResource.builder()
-                .name("Camera Kit")
-                .description("DSLR + lens + tripod")
-                .type(ResourceType.EQUIPMENT)
-                .location("Store room")
-                .hourlyRate(new BigDecimal("15.00"))
-                .available(true)
-                .build());
-
+        BookableResource room = findOrCreateResource(
+                "Meeting Room A", "Room with projector, around 10 people",
+                ResourceType.ROOM, "2nd floor", new BigDecimal("50.00"));
+        BookableResource van = findOrCreateResource(
+                "Office Van", "7 seater",
+                ResourceType.VEHICLE, "Parking", new BigDecimal("35.50"));
+        findOrCreateResource(
+                "Camera Kit", "DSLR + lens + tripod",
+                ResourceType.EQUIPMENT, "Store room", new BigDecimal("15.00"));
         return List.of(room, van);
     }
 
+    private BookableResource findOrCreateResource(
+            String name,
+            String description,
+            ResourceType type,
+            String location,
+            BigDecimal hourlyRate
+    ) {
+        return resourceRepository.findByNameIgnoreCase(name)
+                .orElseGet(() -> resourceRepository.save(BookableResource.builder()
+                        .name(name)
+                        .description(description)
+                        .type(type)
+                        .location(location)
+                        .hourlyRate(hourlyRate)
+                        .available(true)
+                        .build()));
+    }
+
     private void seedReservations(User user, User user2, BookableResource room, BookableResource van) {
+        if (reservationRepository.existsByUser_Id(user.getId())
+                || reservationRepository.existsByUser_Id(user2.getId())) {
+            return;
+        }
         // fixed dates so tests that book near "now" do not collide
         LocalDateTime first = LocalDateTime.of(2026, 12, 1, 9, 0);
         LocalDateTime second = LocalDateTime.of(2026, 12, 2, 9, 0);

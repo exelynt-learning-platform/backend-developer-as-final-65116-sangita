@@ -2,6 +2,7 @@ package com.exelent.booking.repository;
 
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
@@ -20,12 +21,16 @@ public final class ReservationSpecifications {
             BigDecimal minPrice,
             BigDecimal maxPrice
     ) {
+        return matching(userId, status, minPrice, maxPrice).and(fetchUserAndResource());
+    }
+
+    static Specification<Reservation> matching(
+            Long userId,
+            ReservationStatus status,
+            BigDecimal minPrice,
+            BigDecimal maxPrice
+    ) {
         return (root, query, cb) -> {
-            if (query != null && query.getResultType() != Long.class && query.getResultType() != long.class) {
-                root.fetch("user", JoinType.INNER);
-                root.fetch("resource", JoinType.INNER);
-                query.distinct(true);
-            }
             List<Predicate> predicates = new ArrayList<>();
             if (userId != null) {
                 predicates.add(cb.equal(root.get("user").get("id"), userId));
@@ -41,5 +46,24 @@ public final class ReservationSpecifications {
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    static Specification<Reservation> fetchUserAndResource() {
+        return (root, query, cb) -> {
+            if (query != null && !isCountQuery(query)) {
+                root.fetch("user", JoinType.INNER);
+                root.fetch("resource", JoinType.INNER);
+                query.distinct(true);
+            }
+            return cb.conjunction();
+        };
+    }
+
+    private static boolean isCountQuery(CriteriaQuery<?> query) {
+        if (query == null) {
+            return false;
+        }
+        Class<?> resultType = query.getResultType();
+        return resultType == Long.class || resultType == long.class;
     }
 }

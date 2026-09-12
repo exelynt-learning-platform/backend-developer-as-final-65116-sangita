@@ -39,8 +39,6 @@ public class ReservationController {
             @ModelAttribute ReservationFilterRequest filter,
             @PageableDefault(size = 10, sort = ReservationSort.DEFAULT, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        filter.validate();
-        ReservationSort.validate(pageable.getSort());
         return reservationService.search(filter, pageable);
     }
 

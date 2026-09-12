@@ -3,20 +3,17 @@ package com.exelent.booking.service;
 import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.PagedResponse;
 import com.exelent.booking.dto.reservation.ReservationCreateRequest;
 import com.exelent.booking.dto.reservation.ReservationFilterRequest;
 import com.exelent.booking.dto.reservation.ReservationResponse;
+import com.exelent.booking.dto.reservation.ReservationSort;
 import com.exelent.booking.dto.reservation.ReservationUpdateRequest;
 import com.exelent.booking.exception.ApiException;
+import com.exelent.booking.exception.ApiMessages;
 import com.exelent.booking.repository.ReservationRepository;
 import com.exelent.booking.repository.ReservationSpecifications;
-import com.exelent.booking.security.AuthHelper;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -31,12 +28,16 @@ public class ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final ResourceService resourceService;
-    private final AuthHelper authHelper;
+    private final PricingService pricingService;
+    private final ReservationAccessPolicy accessPolicy;
 
     @Transactional(readOnly = true)
     public PagedResponse<ReservationResponse> search(ReservationFilterRequest filter, Pageable pageable) {
-        User loggedIn = authHelper.getLoggedInUser();
-        Long userId = loggedIn.getRole() == Role.ADMIN ? null : loggedIn.getId();
+        filter.validate();
+        ReservationSort.validate(pageable.getSort());
+
+        User loggedIn = accessPolicy.currentUser();
+        Long userId = accessPolicy.listScopeUserId(loggedIn);
 
         return PagedResponse.from(
                 reservationRepository
@@ -53,38 +54,23 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse create(ReservationCreateRequest request) {
-        User owner = authHelper.getLoggedInUser();
+        User owner = accessPolicy.currentUser();
         BookableResource resource = resourceService.getResource(request.resourceId());
 
         if (!resource.isAvailable()) {
-            throw new ApiException(HttpStatus.CONFLICT, "This resource is not available");
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.RESOURCE_UNAVAILABLE);
         }
         checkOverlap(resource.getId(), request.startTime(), request.endTime(), null);
+        accessPolicy.assertCanCreateWithStatus(owner, request.status());
 
-        ReservationStatus status = ReservationStatus.PENDING;
-        if (request.status() != null) {
-            if (owner.getRole() == Role.USER && request.status() != ReservationStatus.PENDING) {
-                throw new ApiException(HttpStatus.FORBIDDEN, "Users can only create PENDING reservations");
-            }
-            status = request.status();
-        }
-
-        BigDecimal price = request.price();
-        if (price == null) {
-            long mins = Duration.between(request.startTime(), request.endTime()).toMinutes();
-            BigDecimal hours = BigDecimal.valueOf(mins).divide(BigDecimal.valueOf(60), 4, RoundingMode.HALF_UP);
-            price = resource.getHourlyRate().multiply(hours).setScale(2, RoundingMode.HALF_UP);
-        } else {
-            price = price.setScale(2, RoundingMode.HALF_UP);
-        }
-
+        ReservationStatus status = request.status() == null ? ReservationStatus.PENDING : request.status();
         Reservation saved = reservationRepository.save(Reservation.builder()
                 .user(owner)
                 .resource(resource)
                 .startTime(request.startTime())
                 .endTime(request.endTime())
                 .status(status)
-                .price(price)
+                .price(pricingService.resolvePrice(resource, request.startTime(), request.endTime(), request.price()))
                 .build());
         return ReservationResponse.from(saved);
     }
@@ -98,7 +84,7 @@ public class ReservationService {
         reservation.setResource(resource);
         reservation.setStartTime(request.startTime());
         reservation.setEndTime(request.endTime());
-        reservation.setPrice(request.price().setScale(2, RoundingMode.HALF_UP));
+        reservation.setPrice(pricingService.resolvePrice(resource, request.startTime(), request.endTime(), request.price()));
         reservation.setStatus(request.status());
         return ReservationResponse.from(reservationRepository.save(reservation));
     }
@@ -107,7 +93,7 @@ public class ReservationService {
     public ReservationResponse cancel(Long id) {
         Reservation reservation = findOwnedOrAdmin(id);
         if (reservation.getStatus() == ReservationStatus.CANCELLED) {
-            throw new ApiException(HttpStatus.CONFLICT, "Already cancelled");
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.ALREADY_CANCELLED);
         }
         reservation.setStatus(ReservationStatus.CANCELLED);
         return ReservationResponse.from(reservationRepository.save(reservation));
@@ -120,16 +106,13 @@ public class ReservationService {
 
     private Reservation findOwnedOrAdmin(Long id) {
         Reservation reservation = getById(id);
-        User loggedIn = authHelper.getLoggedInUser();
-        if (loggedIn.getRole() != Role.ADMIN && !reservation.getUser().getId().equals(loggedIn.getId())) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "You can only view your own reservations");
-        }
+        accessPolicy.requireOwnerOrAdmin(reservation);
         return reservation;
     }
 
     private Reservation getById(Long id) {
         return reservationRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reservation not found"));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, ApiMessages.RESERVATION_NOT_FOUND));
     }
 
     private void checkOverlap(Long resourceId, LocalDateTime start, LocalDateTime end, Long excludeId) {
@@ -141,7 +124,7 @@ public class ReservationService {
                 excludeId
         );
         if (overlap) {
-            throw new ApiException(HttpStatus.CONFLICT, "This time slot is already booked");
+            throw new ApiException(HttpStatus.CONFLICT, ApiMessages.SLOT_ALREADY_BOOKED);
         }
     }
 }

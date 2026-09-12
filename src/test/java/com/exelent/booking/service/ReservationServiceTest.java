@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -41,7 +40,6 @@ class ReservationServiceTest {
     @Mock
     private AuthHelper authHelper;
 
-    @InjectMocks
     private ReservationService reservationService;
 
     private User user;
@@ -60,6 +58,12 @@ class ReservationServiceTest {
                 .build();
         start = LocalDateTime.of(2026, 10, 1, 9, 0);
         end = start.plusHours(2);
+        reservationService = new ReservationService(
+                reservationRepository,
+                resourceService,
+                new PricingService(),
+                new ReservationAccessPolicy(authHelper)
+        );
     }
 
     @Test

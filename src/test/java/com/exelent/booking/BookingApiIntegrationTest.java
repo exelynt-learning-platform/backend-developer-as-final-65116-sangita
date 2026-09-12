@@ -206,6 +206,19 @@ class BookingApiIntegrationTest {
                                 """.formatted(start, start.minusHours(1))))
                 .andExpect(status().isBadRequest());
 
+        mockMvc.perform(post("/api/reservations")
+                        .header("Authorization", bearer(userToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "resourceId": 1,
+                                  "startTime": "2020-01-01T10:00:00",
+                                  "endTime": "2020-01-01T11:00:00",
+                                  "price": 50.00
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
         mockMvc.perform(get("/api/reservations")
                         .header("Authorization", bearer(adminToken))
                         .param("status", "UNKNOWN"))
