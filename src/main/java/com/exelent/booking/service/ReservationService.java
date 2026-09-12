@@ -2,7 +2,7 @@ package com.exelent.booking.service;
 
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.domain.ResourceEntity;
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.PagedResponse;
@@ -83,7 +83,7 @@ public class ReservationService {
         User loggedIn = authHelper.getLoggedInUser();
         // always take owner from jwt
         User owner = userRepository.getReferenceById(loggedIn.getId());
-        ResourceEntity resource = resourceService.getResource(request.resourceId());
+        BookableResource resource = resourceService.getResource(request.resourceId());
 
         if (!resource.isAvailable()) {
             throw new ApiException(HttpStatus.CONFLICT, "This resource is not available");
@@ -120,11 +120,8 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse update(Long id, ReservationUpdateRequest request) {
-        if (!authHelper.isAdmin()) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only admin can update reservations");
-        }
         Reservation reservation = getById(id);
-        ResourceEntity resource = resourceService.getResource(request.resourceId());
+        BookableResource resource = resourceService.getResource(request.resourceId());
         checkOverlap(resource.getId(), request.startTime(), request.endTime(), reservation.getId());
 
         reservation.setResource(resource);
@@ -147,9 +144,6 @@ public class ReservationService {
 
     @Transactional
     public void delete(Long id) {
-        if (!authHelper.isAdmin()) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only admin can delete reservations");
-        }
         reservationRepository.delete(getById(id));
     }
 

@@ -55,4 +55,21 @@ class JwtServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("32 bytes");
     }
+
+    @Test
+    void rejectsMissingSecret() {
+        assertThatThrownBy(() -> new JwtService(new JwtProperties("  ", 1000)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JWT_SECRET is required");
+    }
+
+    @Test
+    void rejectsPlaceholderSecret() {
+        assertThatThrownBy(() -> new JwtService(new JwtProperties(
+                "replace-with-a-long-random-secret-key-min-32-chars",
+                1000
+        )))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("placeholder");
+    }
 }

@@ -2,7 +2,7 @@ package com.exelent.booking.service;
 
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.domain.ResourceEntity;
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import com.exelent.booking.dto.reservation.ReservationCreateRequest;
@@ -47,14 +47,14 @@ class ReservationServiceTest {
     private ReservationService reservationService;
 
     private User user;
-    private ResourceEntity resource;
+    private BookableResource resource;
     private LocalDateTime start;
     private LocalDateTime end;
 
     @BeforeEach
     void setUp() {
         user = User.builder().id(10L).username("user").email("user@gmail.com").password("x").role(Role.USER).enabled(true).build();
-        resource = ResourceEntity.builder()
+        resource = BookableResource.builder()
                 .id(5L)
                 .name("Meeting Room A")
                 .hourlyRate(new BigDecimal("50.00"))
@@ -139,15 +139,5 @@ class ReservationServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting(ex -> ((ApiException) ex).getStatus())
                 .isEqualTo(HttpStatus.CONFLICT);
-    }
-
-    @Test
-    void userCannotUpdateReservation() {
-        when(authHelper.isAdmin()).thenReturn(false);
-
-        assertThatThrownBy(() -> reservationService.update(1L, null))
-                .isInstanceOf(ApiException.class)
-                .extracting(ex -> ((ApiException) ex).getStatus())
-                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 }

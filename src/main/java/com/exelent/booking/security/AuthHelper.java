@@ -1,6 +1,5 @@
 package com.exelent.booking.security;
 
-import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,9 +14,5 @@ public class AuthHelper {
             throw new IllegalStateException("No logged in user found");
         }
         return user;
-    }
-
-    public boolean isAdmin() {
-        return getLoggedInUser().getRole() == Role.ADMIN;
     }
 }

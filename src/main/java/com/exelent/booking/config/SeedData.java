@@ -2,7 +2,7 @@ package com.exelent.booking.config;
 
 import com.exelent.booking.domain.Reservation;
 import com.exelent.booking.domain.ReservationStatus;
-import com.exelent.booking.domain.ResourceEntity;
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.ResourceType;
 import com.exelent.booking.domain.Role;
 import com.exelent.booking.domain.User;
@@ -14,12 +14,14 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
+@Profile("!prod")
 @RequiredArgsConstructor
 public class SeedData implements CommandLineRunner {
 
@@ -59,7 +61,7 @@ public class SeedData implements CommandLineRunner {
                 .enabled(true)
                 .build());
 
-        ResourceEntity room = resourceRepository.save(ResourceEntity.builder()
+        BookableResource room = resourceRepository.save(BookableResource.builder()
                 .name("Meeting Room A")
                 .description("Room with projector, around 10 people")
                 .type(ResourceType.ROOM)
@@ -68,7 +70,7 @@ public class SeedData implements CommandLineRunner {
                 .available(true)
                 .build());
 
-        ResourceEntity van = resourceRepository.save(ResourceEntity.builder()
+        BookableResource van = resourceRepository.save(BookableResource.builder()
                 .name("Office Van")
                 .description("7 seater")
                 .type(ResourceType.VEHICLE)
@@ -77,7 +79,7 @@ public class SeedData implements CommandLineRunner {
                 .available(true)
                 .build());
 
-        resourceRepository.save(ResourceEntity.builder()
+        resourceRepository.save(BookableResource.builder()
                 .name("Camera Kit")
                 .description("DSLR + lens + tripod")
                 .type(ResourceType.EQUIPMENT)

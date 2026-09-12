@@ -15,3 +15,6 @@ spring:
 jwt:
   secret: TestOnlySecretKeyThatIsAtLeastThirtyTwoBytesLong!!
   expiration-ms: 3600000
+
+# Satisfies ${JWT_SECRET} from the main application.yml during tests
+JWT_SECRET: TestOnlySecretKeyThatIsAtLeastThirtyTwoBytesLong!!

@@ -1,6 +1,6 @@
 package com.exelent.booking.dto.resource;
 
-import com.exelent.booking.domain.ResourceEntity;
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.domain.ResourceType;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -16,7 +16,7 @@ public record ResourceResponse(
         Instant createdAt,
         Instant updatedAt
 ) {
-    public static ResourceResponse from(ResourceEntity resource) {
+    public static ResourceResponse from(BookableResource resource) {
         return new ResourceResponse(
                 resource.getId(),
                 resource.getName(),

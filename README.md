@@ -10,9 +10,16 @@ You need JDK 17+ and MySQL.
 
 1. Create a database called `resource_booking` (or leave it, the JDBC URL can create it).
 2. If your MySQL user/password is not `root` / `root`, change it in `application.yml` or set env vars.
-3. Start the app:
+3. Start with the `dev` profile (local JWT key + seed users):
 
 ```
+mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+`JWT_SECRET` is required outside `dev` / `h2` / test. There is no default key. For default or `prod`, set a secret of at least 32 characters first:
+
+```
+set JWT_SECRET=put-your-own-long-random-secret-here-32+
 mvnw.cmd spring-boot:run
 ```
 
@@ -28,6 +35,8 @@ Docker (optional):
 docker compose up -d mysql
 ```
 
+Production: use `--spring.profiles.active=prod` and set `JWT_SECRET`. Seed users are not created on `prod`.
+
 ## Env vars
 
 | Name | Default |
@@ -36,12 +45,14 @@ docker compose up -d mysql
 | DB_URL | jdbc:mysql://localhost:3306/resource_booking?... |
 | DB_USERNAME | root |
 | DB_PASSWORD | root |
-| JWT_SECRET | (dev key, change this, min 32 chars) |
+| JWT_SECRET | **required** (no default; min 32 chars) |
 | JWT_EXPIRATION_MS | 86400000 |
 
 See `.env.example`.
 
-## Test users (created on first start)
+## Test users (dev / h2 / test only)
+
+Created on first start unless the `prod` profile is active:
 
 - admin / Admin@123  (ADMIN)
 - user / User@123    (USER)

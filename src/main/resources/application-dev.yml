@@ -1,0 +1,3 @@
+# Local/demo only. Do not use this profile in production.
+jwt:
+  secret: DevOnlySecretKeyThatIsAtLeastThirtyTwoBytesLong!!

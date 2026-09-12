@@ -41,7 +41,7 @@ public class Reservation {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "resource_id", nullable = false)
-    private ResourceEntity resource;
+    private BookableResource resource;
 
     @Column(nullable = false)
     private LocalDateTime startTime;

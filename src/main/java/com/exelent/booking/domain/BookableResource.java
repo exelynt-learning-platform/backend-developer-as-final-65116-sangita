@@ -25,7 +25,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ResourceEntity {
+public class BookableResource {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

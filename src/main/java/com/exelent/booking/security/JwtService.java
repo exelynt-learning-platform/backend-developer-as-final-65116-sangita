@@ -57,6 +57,13 @@ public class JwtService {
     }
 
     private static SecretKey buildKey(String secret) {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET is required. Set it before starting the app.");
+        }
+        if (secret.toLowerCase().contains("replace-with") || secret.toLowerCase().contains("changeme")) {
+            throw new IllegalStateException("JWT_SECRET looks like a placeholder. Set a real secret.");
+        }
+
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(secret);

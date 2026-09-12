@@ -1,6 +1,6 @@
 package com.exelent.booking.service;
 
-import com.exelent.booking.domain.ResourceEntity;
+import com.exelent.booking.domain.BookableResource;
 import com.exelent.booking.dto.PagedResponse;
 import com.exelent.booking.dto.resource.ResourceRequest;
 import com.exelent.booking.dto.resource.ResourceResponse;
@@ -31,7 +31,7 @@ public class ResourceService {
 
     @Transactional
     public ResourceResponse create(ResourceRequest request) {
-        ResourceEntity resource = ResourceEntity.builder()
+        BookableResource resource = BookableResource.builder()
                 .name(request.name().trim())
                 .description(request.description())
                 .type(request.type())
@@ -44,7 +44,7 @@ public class ResourceService {
 
     @Transactional
     public ResourceResponse update(Long id, ResourceRequest request) {
-        ResourceEntity resource = getResource(id);
+        BookableResource resource = getResource(id);
         resource.setName(request.name().trim());
         resource.setDescription(request.description());
         resource.setType(request.type());
@@ -56,7 +56,7 @@ public class ResourceService {
 
     @Transactional
     public void delete(Long id) {
-        ResourceEntity resource = getResource(id);
+        BookableResource resource = getResource(id);
         try {
             resourceRepository.delete(resource);
             resourceRepository.flush();
@@ -65,7 +65,7 @@ public class ResourceService {
         }
     }
 
-    public ResourceEntity getResource(Long id) {
+    public BookableResource getResource(Long id) {
         return resourceRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Resource not found"));
     }
